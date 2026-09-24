@@ -18,3 +18,5 @@ export interface Shape {
   stroke: string
   strokeWidth: number
 }
+
+export type ShapeDraft = Omit<Shape, 'id'>
