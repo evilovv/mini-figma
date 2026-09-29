@@ -1,3 +1,5 @@
+import type { Shape } from '../types/shape'
+
 let counter = 0
 
 function fallbackId(): string {
@@ -13,4 +15,17 @@ export function createShapeId(): string {
     return globalThis.crypto.randomUUID()
   }
   return fallbackId()
+}
+
+export function withUniqueIds(shapes: readonly Shape[]): Shape[] {
+  const seen = new Set<string>()
+  return shapes.map((shape) => {
+    if (!seen.has(shape.id)) {
+      seen.add(shape.id)
+      return shape
+    }
+    const id = createShapeId()
+    seen.add(id)
+    return { ...shape, id }
+  })
 }

@@ -108,9 +108,9 @@ function repairAll(items: readonly unknown[], raw: string): Shape[] {
   return shapes
 }
 
-export function serializeDocument(shapes: readonly Shape[]): string {
+export function serializeDocument(shapes: readonly Shape[], pretty = false): string {
   const document: ShapeDocument = { version: SCHEMA_VERSION, shapes: [...shapes] }
-  return JSON.stringify(document)
+  return JSON.stringify(document, null, pretty ? 2 : undefined)
 }
 
 export function parseDocument(raw: string): Shape[] | null {
