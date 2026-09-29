@@ -23,7 +23,7 @@ export function useHotkeys({ onSelectTool, onDeleteSelected }: HotkeyHandlers): 
       if (event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return
       if (isEditableTarget(event.target)) return
 
-      const tool = SHORTCUT_TO_TOOL[event.key.toLowerCase()]
+      const tool = SHORTCUT_TO_TOOL[event.code]
       if (tool) {
         event.preventDefault()
         onSelectTool(tool)
