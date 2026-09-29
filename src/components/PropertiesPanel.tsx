@@ -9,15 +9,24 @@ interface PropertiesPanelProps {
 const FIELD_CLASS =
   'h-8 w-full rounded-lg border border-neutral-200 px-2 text-xs text-neutral-900 outline-none focus:border-blue-400'
 
+const MAX_COORDINATE = 100000
+const MAX_STROKE_WIDTH = 200
+
 function formatValue(value: number): string {
   return String(Number.isInteger(value) ? value : Math.round(value * 100) / 100)
 }
 
-function parseValue(raw: string, min?: number): number | null {
-  if (raw.trim() === '') return null
-  const value = Number(raw)
+function parseValue(raw: string): number | null {
+  const trimmed = raw.trim()
+  if (trimmed === '') return null
+  const value = Number(trimmed)
   if (!Number.isFinite(value)) return null
+  return Math.round(value * 100) / 100
+}
+
+function clampValue(value: number, min?: number, max?: number): number {
   if (min !== undefined && value < min) return min
+  if (max !== undefined && value > max) return max
   return value
 }
 
@@ -25,20 +34,18 @@ function NumberField({
   label,
   value,
   min,
+  max,
   step = 1,
   onChange,
 }: {
   label: string
   value: number
   min?: number
+  max?: number
   step?: number
   onChange: (value: number) => void
 }) {
-  const [state, setState] = useState<{ value: number; text: string | null }>({ value, text: null })
-  if (state.value !== value) {
-    setState({ value, text: null })
-  }
-  const text = state.value === value ? state.text : null
+  const [text, setText] = useState<string | null>(null)
 
   return (
     <label className="flex flex-col gap-1 text-[11px] font-medium text-neutral-500">
@@ -46,15 +53,23 @@ function NumberField({
       <input
         type="number"
         min={min}
+        max={max}
         step={step}
         value={text ?? formatValue(value)}
         onChange={(event) => {
           const raw = event.target.value
-          setState({ value, text: raw })
-          const parsed = parseValue(raw, min)
-          if (parsed !== null) onChange(parsed)
+          setText(raw)
+          const parsed = parseValue(raw)
+          if (parsed === null) return
+          if (min !== undefined && parsed < min) return
+          if (max !== undefined && parsed > max) return
+          onChange(parsed)
         }}
-        onBlur={() => setState({ value, text: null })}
+        onBlur={() => {
+          setText(null)
+          const clamped = clampValue(value, min, max)
+          if (clamped !== value) onChange(clamped)
+        }}
         className={FIELD_CLASS}
       />
     </label>
@@ -99,18 +114,32 @@ export function PropertiesPanel({ shape, onUpdate }: PropertiesPanelProps) {
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <NumberField label="X" value={shape.x} onChange={(x) => onUpdate(shape.id, { x })} />
-            <NumberField label="Y" value={shape.y} onChange={(y) => onUpdate(shape.id, { y })} />
+            <NumberField
+              label="X"
+              value={shape.x}
+              min={-MAX_COORDINATE}
+              max={MAX_COORDINATE}
+              onChange={(x) => onUpdate(shape.id, { x })}
+            />
+            <NumberField
+              label="Y"
+              value={shape.y}
+              min={-MAX_COORDINATE}
+              max={MAX_COORDINATE}
+              onChange={(y) => onUpdate(shape.id, { y })}
+            />
             <NumberField
               label="Width"
               value={shape.width}
               min={0}
+              max={MAX_COORDINATE}
               onChange={(width) => onUpdate(shape.id, { width })}
             />
             <NumberField
               label="Height"
               value={shape.height}
               min={0}
+              max={MAX_COORDINATE}
               onChange={(height) => onUpdate(shape.id, { height })}
             />
           </div>
@@ -133,6 +162,7 @@ export function PropertiesPanel({ shape, onUpdate }: PropertiesPanelProps) {
               label="Stroke width"
               value={shape.strokeWidth}
               min={0}
+              max={MAX_STROKE_WIDTH}
               step={0.5}
               onChange={(strokeWidth) => onUpdate(shape.id, { strokeWidth })}
             />
