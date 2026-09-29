@@ -100,11 +100,19 @@ export function Canvas({ shapes, selectedId, tool, onSelect, onAddShape, onUpdat
       moveRef.current = null
     }
 
+    const onBlur = () => {
+      drawRef.current = null
+      moveRef.current = null
+      setDraftShape(null)
+    }
+
     window.addEventListener('mousemove', onMouseMove)
     window.addEventListener('mouseup', onMouseUp)
+    window.addEventListener('blur', onBlur)
     return () => {
       window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('mouseup', onMouseUp)
+      window.removeEventListener('blur', onBlur)
     }
   }, [toCanvas, onAddShape, onUpdateShape])
 
