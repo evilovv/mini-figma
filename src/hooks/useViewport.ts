@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import type { Point } from '../types/shape'
-import { clampZoom, zoomAt } from '../utils/geometry'
+import { screenToCanvas, zoomAt } from '../utils/geometry'
 
 export interface Viewport {
   pan: Point
@@ -9,11 +9,9 @@ export interface Viewport {
 
 export function useViewport(containerRef: RefObject<HTMLDivElement | null>) {
   const [viewport, setViewport] = useState<Viewport>({ pan: { x: 0, y: 0 }, zoom: 1 })
-  const [isPanning, setIsPanning] = useState(false)
   const [spaceHeld, setSpaceHeld] = useState(false)
 
   const spaceRef = useRef(false)
-  const panOrigin = useRef<{ mouse: Point; pan: Point } | null>(null)
   const viewportRef = useRef(viewport)
 
   useEffect(() => {
@@ -34,6 +32,7 @@ export function useViewport(containerRef: RefObject<HTMLDivElement | null>) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.code !== 'Space' || event.repeat) return
+      if (event.target instanceof HTMLElement && isInteractive(event.target)) return
       event.preventDefault()
       spaceRef.current = true
       setSpaceHeld(true)
@@ -48,8 +47,6 @@ export function useViewport(containerRef: RefObject<HTMLDivElement | null>) {
     const onBlur = () => {
       spaceRef.current = false
       setSpaceHeld(false)
-      panOrigin.current = null
-      setIsPanning(false)
     }
 
     window.addEventListener('keydown', onKeyDown)
@@ -66,57 +63,51 @@ export function useViewport(containerRef: RefObject<HTMLDivElement | null>) {
     const el = containerRef.current
     if (!el) return
 
-    const onMouseDown = (event: MouseEvent) => {
-      if (!spaceRef.current || event.button !== 0) return
-      event.preventDefault()
-      panOrigin.current = {
-        mouse: { x: event.clientX, y: event.clientY },
-        pan: viewportRef.current.pan,
-      }
-      setIsPanning(true)
-    }
-
-    const onMouseMove = (event: MouseEvent) => {
-      const origin = panOrigin.current
-      if (!origin) return
-      setViewport((current) => ({
-        ...current,
-        pan: {
-          x: origin.pan.x + (event.clientX - origin.mouse.x),
-          y: origin.pan.y + (event.clientY - origin.mouse.y),
-        },
-      }))
-    }
-
-    const onMouseUp = () => {
-      if (!panOrigin.current) return
-      panOrigin.current = null
-      setIsPanning(false)
-    }
-
     const onWheel = (event: WheelEvent) => {
       if (!event.ctrlKey && !event.metaKey) return
       event.preventDefault()
       const rect = el.getBoundingClientRect()
       const anchor = { x: event.clientX - rect.left, y: event.clientY - rect.top }
       setViewport((current) => {
-        const nextZoom = clampZoom(current.zoom * Math.exp(-event.deltaY * 0.0015))
-        if (nextZoom === current.zoom) return current
-        return { pan: zoomAt(anchor, current.pan, current.zoom, nextZoom), zoom: nextZoom }
+        const result = zoomAt(anchor, current.pan, current.zoom, current.zoom * Math.exp(-event.deltaY * 0.0015))
+        return result.zoom === current.zoom ? current : result
       })
     }
 
-    el.addEventListener('mousedown', onMouseDown)
     el.addEventListener('wheel', onWheel, { passive: false })
-    window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('mouseup', onMouseUp)
-    return () => {
-      el.removeEventListener('mousedown', onMouseDown)
-      el.removeEventListener('wheel', onWheel)
-      window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('mouseup', onMouseUp)
-    }
+    return () => el.removeEventListener('wheel', onWheel)
   }, [containerRef])
 
-  return { pan: viewport.pan, zoom: viewport.zoom, isPanning, spaceHeld }
+  const toCanvas = useCallback(
+    (client: Point): Point => {
+      const el = containerRef.current
+      if (!el) return { x: 0, y: 0 }
+      const rect = el.getBoundingClientRect()
+      const { pan, zoom } = viewportRef.current
+      return screenToCanvas({ x: client.x - rect.left, y: client.y - rect.top }, pan, zoom)
+    },
+    [containerRef],
+  )
+
+  const panTo = useCallback((pan: Point) => {
+    setViewport((current) => (current.pan.x === pan.x && current.pan.y === pan.y ? current : { ...current, pan }))
+  }, [])
+
+  const zoomAround = useCallback((anchor: Point, nextZoom: number) => {
+    setViewport((current) => {
+      const result = zoomAt(anchor, current.pan, current.zoom, nextZoom)
+      return result.zoom === current.zoom ? current : result
+    })
+  }, [])
+
+  return { pan: viewport.pan, zoom: viewport.zoom, spaceHeld, toCanvas, panTo, zoomAround }
+}
+
+function isInteractive(target: HTMLElement): boolean {
+  if (target.isContentEditable) return true
+  const tag = target.tagName
+  if (tag === 'BUTTON' || tag === 'A' || tag === 'SELECT' || tag === 'TEXTAREA') return true
+  if (tag !== 'INPUT') return false
+  const type = (target as HTMLInputElement).type
+  return !['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file'].includes(type)
 }

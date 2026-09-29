@@ -14,11 +14,16 @@ export function screenToCanvas(screen: Point, pan: Point, zoom: number): Point {
   }
 }
 
-export function zoomAt(anchor: Point, pan: Point, zoom: number, nextZoom: number): Point {
+export function zoomAt(
+  anchor: Point,
+  pan: Point,
+  zoom: number,
+  nextZoom: number,
+): { pan: Point; zoom: number } {
   const clamped = clampZoom(nextZoom)
   const world = screenToCanvas(anchor, pan, zoom)
   return {
-    x: anchor.x - world.x * clamped,
-    y: anchor.y - world.y * clamped,
+    pan: { x: anchor.x - world.x * clamped, y: anchor.y - world.y * clamped },
+    zoom: clamped,
   }
 }

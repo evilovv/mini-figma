@@ -91,6 +91,20 @@ export function useShapes() {
     setSelectedId((prev) => (prev === id ? null : prev))
   }, [])
 
+  const nudgeShape = useCallback((id: string, dx: number, dy: number) => {
+    setShapes((prev) => prev.map((s) => (s.id === id ? { ...s, x: s.x + dx, y: s.y + dy } : s)))
+  }, [])
+
+  const replaceShapes = useCallback((next: Shape[]) => {
+    setShapes(next)
+    setSelectedId(null)
+  }, [])
+
+  const clearShapes = useCallback(() => {
+    setShapes([])
+    setSelectedId(null)
+  }, [])
+
   const select = useCallback((id: string | null) => {
     setSelectedId(id)
   }, [])
@@ -106,6 +120,9 @@ export function useShapes() {
     addShape,
     updateShape,
     removeShape,
+    nudgeShape,
+    replaceShapes,
+    clearShapes,
     select,
   }
 }

@@ -7,7 +7,7 @@ interface PropertiesPanelProps {
 }
 
 const FIELD_CLASS =
-  'h-8 w-full rounded-lg border border-neutral-200 px-2 text-xs text-neutral-900 outline-none focus:border-blue-400'
+  'h-8 w-full rounded-lg border border-neutral-200 px-2 text-xs text-neutral-900 outline-none focus:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-500'
 
 const MAX_COORDINATE = 100000
 const MAX_STROKE_WIDTH = 200
@@ -100,7 +100,7 @@ function ColorField({
 
 export function PropertiesPanel({ shape, onUpdate }: PropertiesPanelProps) {
   return (
-    <aside className="absolute right-4 top-4 z-10 w-60 rounded-2xl border border-neutral-200 bg-white p-4 shadow-lg">
+    <aside className="absolute inset-x-2 top-2 z-10 max-h-[38dvh] w-auto overflow-y-auto overscroll-contain rounded-2xl border border-neutral-200 bg-white p-4 shadow-lg sm:inset-x-auto sm:right-4 sm:max-h-[calc(100dvh-2rem)] sm:w-60 sm:overflow-visible">
       <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-neutral-400">
         Properties
       </h2>

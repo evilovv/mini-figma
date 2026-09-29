@@ -11,7 +11,7 @@ export function LayersPanel({ shapes, selectedId, onSelect, onDelete }: LayersPa
   const layers = shapes.map((shape, index) => ({ shape, position: index + 1 })).reverse()
 
   return (
-    <aside className="absolute bottom-4 right-4 z-10 flex max-h-[calc(100vh-2rem)] w-60 flex-col rounded-2xl border border-neutral-200 bg-white p-4 shadow-lg">
+    <aside className="absolute inset-x-2 bottom-2 z-10 flex max-h-[35dvh] w-auto flex-col rounded-2xl border border-neutral-200 bg-white p-4 shadow-lg sm:inset-x-auto sm:right-4 sm:max-h-[calc(100dvh-2rem)] sm:w-60">
       <h2 className="mb-3 shrink-0 text-[11px] font-semibold uppercase tracking-widest text-neutral-400">
         Layers
       </h2>

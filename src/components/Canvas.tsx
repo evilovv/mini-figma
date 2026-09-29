@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import type { Point, Shape as ShapeModel, ShapeDraft, Tool } from '../types/shape'
 import { DEFAULT_FILL, DEFAULT_STROKE, DEFAULT_STROKE_WIDTH } from '../constants/shape'
 import { useViewport } from '../hooks/useViewport'
 import { Shape } from './Shape'
-import { screenToCanvas } from '../utils/geometry'
 
 interface CanvasProps {
   shapes: ShapeModel[]
@@ -12,6 +11,7 @@ interface CanvasProps {
   onSelect: (id: string | null) => void
   onAddShape: (draft: ShapeDraft) => void
   onUpdateShape: (id: string, patch: Partial<Omit<ShapeModel, 'id'>>) => void
+  onMoveShapeByKeyboard: (id: string, dx: number, dy: number) => void
 }
 
 const DEFAULT_DRAFT: Omit<ShapeDraft, 'type'> = {
@@ -24,72 +24,159 @@ const DEFAULT_DRAFT: Omit<ShapeDraft, 'type'> = {
   strokeWidth: DEFAULT_STROKE_WIDTH,
 }
 
+const TAP_THRESHOLD_PX = 6
+
 interface DrawState {
+  pointerId: number
   origin: Point
   draft: ShapeDraft
   current: ShapeDraft | null
 }
 
 interface MoveState {
+  pointerId: number
   shapeId: string
   origin: Point
   start: Point
 }
 
-export function Canvas({ shapes, selectedId, tool, onSelect, onAddShape, onUpdateShape }: CanvasProps) {
+interface PanState {
+  pointerId: number
+  client: Point
+  pan: Point
+  moved: boolean
+  onTap: boolean
+}
+
+interface PinchState {
+  distance: number
+  zoom: number
+}
+
+function distanceBetween(a: Point, b: Point): number {
+  return Math.hypot(a.x - b.x, a.y - b.y)
+}
+
+function midpointOf(a: Point, b: Point): Point {
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+}
+
+export function Canvas({
+  shapes,
+  selectedId,
+  tool,
+  onSelect,
+  onAddShape,
+  onUpdateShape,
+  onMoveShapeByKeyboard,
+}: CanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { pan, zoom, isPanning, spaceHeld } = useViewport(containerRef)
+  const { pan, zoom, spaceHeld, toCanvas, panTo, zoomAround } = useViewport(containerRef)
 
   const [draftShape, setDraftShape] = useState<ShapeDraft | null>(null)
-  const zoomRef = useRef(zoom)
-  const containersRef = useRef<{ pan: Point; zoom: number }>({ pan, zoom })
+  const [isPanning, setIsPanning] = useState(false)
+  const [isPinching, setIsPinching] = useState(false)
+
   const drawRef = useRef<DrawState | null>(null)
   const moveRef = useRef<MoveState | null>(null)
+  const panRef = useRef<PanState | null>(null)
+  const pinchRef = useRef<PinchState | null>(null)
+  const pointersRef = useRef(new Map<number, Point>())
 
-  useEffect(() => {
-    zoomRef.current = zoom
-    containersRef.current = { pan, zoom }
-  }, [pan, zoom])
-
-  const toCanvas = useCallback((event: { clientX: number; clientY: number }): Point => {
-    const el = containerRef.current
-    if (!el) return { x: 0, y: 0 }
-    const rect = el.getBoundingClientRect()
-    const { pan: p, zoom: z } = containersRef.current
-    return screenToCanvas({ x: event.clientX - rect.left, y: event.clientY - rect.top }, p, z)
+  const cancelGestures = useCallback(() => {
+    drawRef.current = null
+    moveRef.current = null
+    panRef.current = null
+    setDraftShape(null)
+    setIsPanning(false)
   }, [])
 
   useEffect(() => {
-    const onMouseMove = (event: globalThis.MouseEvent) => {
+    const el = containerRef.current
+    if (!el) return
+
+    const onDown = (event: PointerEvent) => {
+      pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+      if (pointersRef.current.size < 2) return
+      cancelGestures()
+      const [first, second] = [...pointersRef.current.values()]
+      pinchRef.current = { distance: distanceBetween(first, second), zoom }
+      setIsPinching(true)
+    }
+
+    const onMove = (event: PointerEvent) => {
+      if (!pointersRef.current.has(event.pointerId)) return
+      pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+      const pinch = pinchRef.current
+      if (!pinch || pinch.distance <= 0) return
+      const [first, second] = [...pointersRef.current.values()]
+      const rect = el.getBoundingClientRect()
+      const center = midpointOf(first, second)
+      const anchor = { x: center.x - rect.left, y: center.y - rect.top }
+      zoomAround(anchor, pinch.zoom * (distanceBetween(first, second) / pinch.distance))
+    }
+
+    const onRelease = (event: PointerEvent) => {
+      pointersRef.current.delete(event.pointerId)
+      if (pointersRef.current.size < 2) {
+        pinchRef.current = null
+        setIsPinching(false)
+      }
+    }
+
+    el.addEventListener('pointerdown', onDown, true)
+    window.addEventListener('pointermove', onMove, true)
+    window.addEventListener('pointerup', onRelease, true)
+    window.addEventListener('pointercancel', onRelease, true)
+    return () => {
+      el.removeEventListener('pointerdown', onDown, true)
+      window.removeEventListener('pointermove', onMove, true)
+      window.removeEventListener('pointerup', onRelease, true)
+      window.removeEventListener('pointercancel', onRelease, true)
+    }
+  }, [cancelGestures, zoom, zoomAround])
+
+  useEffect(() => {
+    const onPointerMove = (event: globalThis.PointerEvent) => {
       const draw = drawRef.current
-      if (draw) {
+      if (draw && draw.pointerId === event.pointerId) {
         const { origin, draft } = draw
-        const current = toCanvas(event)
-        const draftShape: ShapeDraft = {
+        const current = toCanvas({ x: event.clientX, y: event.clientY })
+        const next: ShapeDraft = {
           ...draft,
           x: Math.min(origin.x, current.x),
           y: Math.min(origin.y, current.y),
           width: Math.abs(current.x - origin.x),
           height: Math.abs(current.y - origin.y),
         }
-        draw.current = draftShape
-        setDraftShape(draftShape)
+        draw.current = next
+        setDraftShape(next)
         return
       }
 
       const move = moveRef.current
-      if (move) {
-        const { shapeId, origin, start } = move
-        onUpdateShape(shapeId, {
-          x: start.x + (event.clientX - origin.x) / zoomRef.current,
-          y: start.y + (event.clientY - origin.y) / zoomRef.current,
+      if (move && move.pointerId === event.pointerId) {
+        onUpdateShape(move.shapeId, {
+          x: move.start.x + (event.clientX - move.origin.x) / zoom,
+          y: move.start.y + (event.clientY - move.origin.y) / zoom,
         })
+        return
+      }
+
+      const panGesture = panRef.current
+      if (panGesture && panGesture.pointerId === event.pointerId) {
+        const dx = event.clientX - panGesture.client.x
+        const dy = event.clientY - panGesture.client.y
+        if (!panGesture.moved && Math.hypot(dx, dy) > TAP_THRESHOLD_PX) panGesture.moved = true
+        if (panGesture.moved) {
+          panTo({ x: panGesture.pan.x + dx, y: panGesture.pan.y + dy })
+        }
       }
     }
 
-    const onMouseUp = () => {
+    const onPointerUp = (event: globalThis.PointerEvent) => {
       const draw = drawRef.current
-      if (draw) {
+      if (draw && draw.pointerId === event.pointerId) {
         drawRef.current = null
         const finished = draw.current
         setDraftShape(null)
@@ -98,32 +185,63 @@ export function Canvas({ shapes, selectedId, tool, onSelect, onAddShape, onUpdat
         }
         return
       }
-      moveRef.current = null
+
+      const move = moveRef.current
+      if (move && move.pointerId === event.pointerId) {
+        moveRef.current = null
+        return
+      }
+
+      const panGesture = panRef.current
+      if (panGesture && panGesture.pointerId === event.pointerId) {
+        panRef.current = null
+        setIsPanning(false)
+        if (!panGesture.moved && panGesture.onTap) onSelect(null)
+      }
     }
 
     const onBlur = () => {
-      drawRef.current = null
-      moveRef.current = null
-      setDraftShape(null)
+      cancelGestures()
+      pinchRef.current = null
+      pointersRef.current.clear()
+      setIsPinching(false)
     }
 
-    window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('mouseup', onMouseUp)
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup', onPointerUp)
+    window.addEventListener('pointercancel', onPointerUp)
     window.addEventListener('blur', onBlur)
     return () => {
-      window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('mouseup', onMouseUp)
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerup', onPointerUp)
+      window.removeEventListener('pointercancel', onPointerUp)
       window.removeEventListener('blur', onBlur)
     }
-  }, [toCanvas, onAddShape, onUpdateShape])
+  }, [cancelGestures, onAddShape, onSelect, onUpdateShape, panTo, toCanvas, zoom])
 
-  const handleMouseDown = (event: ReactMouseEvent) => {
-    if (event.button !== 0 || spaceHeld) return
+  const handlePointerDown = (event: ReactPointerEvent) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+    if (pinchRef.current) return
+
+    const client = { x: event.clientX, y: event.clientY }
+    const isTouch = event.pointerType !== 'mouse'
+
+    if (spaceHeld || (isTouch && tool === 'select')) {
+      panRef.current = {
+        pointerId: event.pointerId,
+        client,
+        pan,
+        moved: false,
+        onTap: isTouch && tool === 'select',
+      }
+      setIsPanning(true)
+      return
+    }
 
     if (tool !== 'select') {
-      const origin = toCanvas(event)
       drawRef.current = {
-        origin,
+        pointerId: event.pointerId,
+        origin: toCanvas(client),
         draft: { ...DEFAULT_DRAFT, type: tool },
         current: null,
       }
@@ -135,29 +253,57 @@ export function Canvas({ shapes, selectedId, tool, onSelect, onAddShape, onUpdat
 
   const shapesInteractive = tool === 'select' && !spaceHeld
 
-  const handleShapeMouseDown = useCallback(
-    (shape: ShapeModel, event: ReactMouseEvent) => {
-      if (tool !== 'select' || spaceHeld) return
+  const handleShapePointerDown = useCallback(
+    (shape: ShapeModel, event: ReactPointerEvent) => {
+      if (tool !== 'select' || spaceHeld || pinchRef.current) return
       event.stopPropagation()
       onSelect(shape.id)
       moveRef.current = {
+        pointerId: event.pointerId,
         shapeId: shape.id,
         origin: { x: event.clientX, y: event.clientY },
         start: { x: shape.x, y: shape.y },
       }
     },
-    [onSelect, tool, spaceHeld],
+    [onSelect, spaceHeld, tool],
+  )
+
+  const handleShapeKeyDown = useCallback(
+    (shape: ShapeModel, event: ReactKeyboardEvent) => {
+      const step = event.shiftKey ? 10 : 1
+      const deltas: Record<string, Point> = {
+        ArrowLeft: { x: -step, y: 0 },
+        ArrowRight: { x: step, y: 0 },
+        ArrowUp: { x: 0, y: -step },
+        ArrowDown: { x: 0, y: step },
+      }
+      const delta = deltas[event.key]
+      if (!delta) return
+      event.preventDefault()
+      onSelect(shape.id)
+      onMoveShapeByKeyboard(shape.id, delta.x, delta.y)
+    },
+    [onMoveShapeByKeyboard, onSelect],
   )
 
   const grid = 20 * zoom
-  const cursor = isPanning ? 'cursor-grabbing' : spaceHeld ? 'cursor-grab' : tool !== 'select' ? 'cursor-crosshair' : 'cursor-default'
+  const cursor = isPinching
+    ? 'cursor-grabbing'
+    : isPanning
+      ? 'cursor-grabbing'
+      : spaceHeld
+        ? 'cursor-grab'
+        : tool !== 'select'
+          ? 'cursor-crosshair'
+          : 'cursor-default'
 
   return (
     <div
       ref={containerRef}
       className={`absolute inset-0 select-none overflow-hidden bg-neutral-50 ${cursor}`}
-      onMouseDown={handleMouseDown}
+      onPointerDown={handlePointerDown}
       style={{
+        touchAction: 'none',
         backgroundImage:
           'linear-gradient(to right, rgba(0, 0, 0, 0.07) 1px, transparent 1px), ' +
           'linear-gradient(to bottom, rgba(0, 0, 0, 0.07) 1px, transparent 1px)',
@@ -172,13 +318,16 @@ export function Canvas({ shapes, selectedId, tool, onSelect, onAddShape, onUpdat
           transformOrigin: '0 0',
         }}
       >
-        {shapes.map((shape) => (
+        {shapes.map((shape, index) => (
           <Shape
             key={shape.id}
             shape={shape}
             selected={shape.id === selectedId}
             interactive={shapesInteractive}
-            onMouseDown={(event) => handleShapeMouseDown(shape, event)}
+            position={index + 1}
+            onPointerDown={(event) => handleShapePointerDown(shape, event)}
+            onFocus={() => onSelect(shape.id)}
+            onKeyDown={(event) => handleShapeKeyDown(shape, event)}
           />
         ))}
         {draftShape && <Shape shape={draftShape} selected={false} />}

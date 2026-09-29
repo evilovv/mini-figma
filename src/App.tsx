@@ -6,8 +6,18 @@ import { useShapes } from './hooks/useShapes'
 import { useHotkeys } from './hooks/useHotkeys'
 
 export default function App() {
-  const { shapes, selectedId, selectedShape, tool, selectTool, addShape, updateShape, removeShape, select } =
-    useShapes()
+  const {
+    shapes,
+    selectedId,
+    selectedShape,
+    tool,
+    selectTool,
+    addShape,
+    updateShape,
+    removeShape,
+    nudgeShape,
+    select,
+  } = useShapes()
 
   useHotkeys({
     onSelectTool: selectTool,
@@ -17,7 +27,7 @@ export default function App() {
   })
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-neutral-100 font-sans text-neutral-900 antialiased">
+    <div className="relative h-dvh w-screen overflow-hidden bg-neutral-100 font-sans text-neutral-900 antialiased">
       <Canvas
         shapes={shapes}
         selectedId={selectedId}
@@ -25,6 +35,7 @@ export default function App() {
         onSelect={select}
         onAddShape={addShape}
         onUpdateShape={updateShape}
+        onMoveShapeByKeyboard={nudgeShape}
       />
       <Toolbar tool={tool} onSelectTool={selectTool} />
       <PropertiesPanel shape={selectedShape} onUpdate={updateShape} />
