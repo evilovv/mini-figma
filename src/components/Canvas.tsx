@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import type { Point, Shape as ShapeModel, ShapeDraft, Tool } from '../types/shape'
-import { DEFAULT_FILL, DEFAULT_STROKE, DEFAULT_STROKE_WIDTH } from '../constants/shape'
+import { DEFAULT_FILL, DEFAULT_STROKE, DEFAULT_STROKE_WIDTH, GRID_SIZE } from '../constants/shape'
 import { useViewport } from '../hooks/useViewport'
+import { snapToGrid } from '../utils/geometry'
 import { Shape } from './Shape'
 
 interface CanvasProps {
   shapes: ShapeModel[]
   selectedId: string | null
   tool: Tool
+  snap: boolean
   onSelect: (id: string | null) => void
   onAddShape: (draft: ShapeDraft) => void
   onUpdateShape: (id: string, patch: Partial<Omit<ShapeModel, 'id'>>) => void
@@ -65,6 +67,7 @@ export function Canvas({
   shapes,
   selectedId,
   tool,
+  snap,
   onSelect,
   onAddShape,
   onUpdateShape,
@@ -90,6 +93,12 @@ export function Canvas({
     setDraftShape(null)
     setIsPanning(false)
   }, [])
+
+  const align = useCallback(
+    (point: Point): Point =>
+      snap ? { x: snapToGrid(point.x, GRID_SIZE), y: snapToGrid(point.y, GRID_SIZE) } : point,
+    [snap],
+  )
 
   useEffect(() => {
     const el = containerRef.current
@@ -141,7 +150,7 @@ export function Canvas({
       const draw = drawRef.current
       if (draw && draw.pointerId === event.pointerId) {
         const { origin, draft } = draw
-        const current = toCanvas({ x: event.clientX, y: event.clientY })
+        const current = align(toCanvas({ x: event.clientX, y: event.clientY }))
         const next: ShapeDraft = {
           ...draft,
           x: Math.min(origin.x, current.x),
@@ -156,10 +165,11 @@ export function Canvas({
 
       const move = moveRef.current
       if (move && move.pointerId === event.pointerId) {
-        onUpdateShape(move.shapeId, {
+        const next = align({
           x: move.start.x + (event.clientX - move.origin.x) / zoom,
           y: move.start.y + (event.clientY - move.origin.y) / zoom,
         })
+        onUpdateShape(move.shapeId, { x: next.x, y: next.y })
         return
       }
 
@@ -217,7 +227,7 @@ export function Canvas({
       window.removeEventListener('pointercancel', onPointerUp)
       window.removeEventListener('blur', onBlur)
     }
-  }, [cancelGestures, onAddShape, onSelect, onUpdateShape, panTo, toCanvas, zoom])
+  }, [align, cancelGestures, onAddShape, onSelect, onUpdateShape, panTo, toCanvas, zoom])
 
   const handlePointerDown = (event: ReactPointerEvent) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return
@@ -241,7 +251,7 @@ export function Canvas({
     if (tool !== 'select') {
       drawRef.current = {
         pointerId: event.pointerId,
-        origin: toCanvas(client),
+        origin: align(toCanvas(client)),
         draft: { ...DEFAULT_DRAFT, type: tool },
         current: null,
       }
@@ -270,7 +280,7 @@ export function Canvas({
 
   const handleShapeKeyDown = useCallback(
     (shape: ShapeModel, event: ReactKeyboardEvent) => {
-      const step = event.shiftKey ? 10 : 1
+      const step = snap ? GRID_SIZE : event.shiftKey ? 10 : 1
       const deltas: Record<string, Point> = {
         ArrowLeft: { x: -step, y: 0 },
         ArrowRight: { x: step, y: 0 },
@@ -283,10 +293,10 @@ export function Canvas({
       onSelect(shape.id)
       onMoveShapeByKeyboard(shape.id, delta.x, delta.y)
     },
-    [onMoveShapeByKeyboard, onSelect],
+    [onMoveShapeByKeyboard, onSelect, snap],
   )
 
-  const grid = 20 * zoom
+  const grid = GRID_SIZE * zoom
   const cursor = isPinching
     ? 'cursor-grabbing'
     : isPanning

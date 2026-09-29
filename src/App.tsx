@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { Canvas } from './components/Canvas'
 import { Toolbar } from './components/Toolbar'
 import { PropertiesPanel } from './components/PropertiesPanel'
 import { LayersPanel } from './components/LayersPanel'
+import { OptionsPanel } from './components/OptionsPanel'
 import { useShapes } from './hooks/useShapes'
 import { useHotkeys } from './hooks/useHotkeys'
 import { shapeLabel } from './utils/label'
@@ -19,6 +21,8 @@ export default function App() {
     nudgeShape,
     select,
   } = useShapes()
+
+  const [snap, setSnap] = useState(false)
 
   useHotkeys({
     onSelectTool: selectTool,
@@ -40,11 +44,13 @@ export default function App() {
         shapes={shapes}
         selectedId={selectedId}
         tool={tool}
+        snap={snap}
         onSelect={select}
         onAddShape={addShape}
         onUpdateShape={updateShape}
         onMoveShapeByKeyboard={nudgeShape}
       />
+      <OptionsPanel snap={snap} onToggleSnap={setSnap} />
       <Toolbar tool={tool} onSelectTool={selectTool} />
       <PropertiesPanel shape={selectedShape} onUpdate={updateShape} />
       <LayersPanel

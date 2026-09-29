@@ -7,6 +7,10 @@ export function clampZoom(zoom: number): number {
   return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom))
 }
 
+export function snapToGrid(value: number, grid: number): number {
+  return Math.round(value / grid) * grid
+}
+
 export function screenToCanvas(screen: Point, pan: Point, zoom: number): Point {
   return {
     x: (screen.x - pan.x) / zoom,
