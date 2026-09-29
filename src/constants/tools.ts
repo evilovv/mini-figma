@@ -1,4 +1,4 @@
-import type { ShapeType, Tool } from '../types/shape'
+import type { Tool } from '../types/shape'
 
 export const SHORTCUT_TO_TOOL: Readonly<Record<string, Tool>> = {
   v: 'select',
@@ -8,15 +8,14 @@ export const SHORTCUT_TO_TOOL: Readonly<Record<string, Tool>> = {
 
 export interface ToolDefinition {
   id: Tool
-  shapeType: ShapeType | null
   label: string
   shortcut: string
 }
 
 export const TOOLS: readonly ToolDefinition[] = [
-  { id: 'select', shapeType: null, label: 'Select', shortcut: 'v' },
-  { id: 'rectangle', shapeType: 'rectangle', label: 'Rectangle', shortcut: 'r' },
-  { id: 'ellipse', shapeType: 'ellipse', label: 'Ellipse', shortcut: 'o' },
+  { id: 'select', label: 'Select', shortcut: 'v' },
+  { id: 'rectangle', label: 'Rectangle', shortcut: 'r' },
+  { id: 'ellipse', label: 'Ellipse', shortcut: 'o' },
 ]
 
 export const DEFAULT_TOOL: Tool = 'select'

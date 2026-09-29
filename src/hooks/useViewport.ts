@@ -117,5 +117,5 @@ export function useViewport(containerRef: RefObject<HTMLDivElement | null>) {
     }
   }, [containerRef])
 
-  return { pan: viewport.pan, zoom: viewport.zoom, isPanning, spaceHeld, center }
+  return { pan: viewport.pan, zoom: viewport.zoom, isPanning, spaceHeld }
 }

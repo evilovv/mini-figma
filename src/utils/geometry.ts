@@ -14,13 +14,6 @@ export function screenToCanvas(screen: Point, pan: Point, zoom: number): Point {
   }
 }
 
-export function canvasToScreen(canvas: Point, pan: Point, zoom: number): Point {
-  return {
-    x: canvas.x * zoom + pan.x,
-    y: canvas.y * zoom + pan.y,
-  }
-}
-
 export function zoomAt(anchor: Point, pan: Point, zoom: number, nextZoom: number): Point {
   const clamped = clampZoom(nextZoom)
   const world = screenToCanvas(anchor, pan, zoom)
