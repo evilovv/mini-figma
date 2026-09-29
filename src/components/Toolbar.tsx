@@ -17,6 +17,8 @@ export function Toolbar({ tool, onSelectTool }: ToolbarProps) {
               key={item.id}
               type="button"
               title={`${item.label} (${item.shortcut})`}
+              aria-label={item.label}
+              aria-pressed={active}
               onClick={() => onSelectTool(item.id)}
               className={`flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold uppercase transition-colors ${
                 active
