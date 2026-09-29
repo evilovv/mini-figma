@@ -95,6 +95,7 @@ export function useViewport(containerRef: RefObject<HTMLDivElement | null>) {
     }
 
     const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return
       event.preventDefault()
       const rect = el.getBoundingClientRect()
       const anchor = { x: event.clientX - rect.left, y: event.clientY - rect.top }
