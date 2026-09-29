@@ -26,8 +26,7 @@ const DEFAULT_DRAFT: Omit<ShapeDraft, 'type'> = {
 interface DrawState {
   origin: Point
   draft: ShapeDraft
-  shapeId: string
-  current: ShapeModel | null
+  current: ShapeDraft | null
 }
 
 interface MoveState {
@@ -40,15 +39,13 @@ export function Canvas({ shapes, selectedId, tool, onSelect, onAddShape, onUpdat
   const containerRef = useRef<HTMLDivElement>(null)
   const { pan, zoom, isPanning, spaceHeld } = useViewport(containerRef)
 
-  const [draftShape, setDraftShape] = useState<ShapeModel | null>(null)
-  const panRef = useRef(pan)
+  const [draftShape, setDraftShape] = useState<ShapeDraft | null>(null)
   const zoomRef = useRef(zoom)
   const containersRef = useRef<{ pan: Point; zoom: number }>({ pan, zoom })
   const drawRef = useRef<DrawState | null>(null)
   const moveRef = useRef<MoveState | null>(null)
 
   useEffect(() => {
-    panRef.current = pan
     zoomRef.current = zoom
     containersRef.current = { pan, zoom }
   }, [pan, zoom])
@@ -65,10 +62,9 @@ export function Canvas({ shapes, selectedId, tool, onSelect, onAddShape, onUpdat
     const onMouseMove = (event: globalThis.MouseEvent) => {
       const draw = drawRef.current
       if (draw) {
-        const { origin, draft, shapeId } = draw
+        const { origin, draft } = draw
         const current = toCanvas(event)
-        const draftShape: ShapeModel = {
-          id: shapeId,
+        const draftShape: ShapeDraft = {
           ...draft,
           x: Math.min(origin.x, current.x),
           y: Math.min(origin.y, current.y),
@@ -119,7 +115,6 @@ export function Canvas({ shapes, selectedId, tool, onSelect, onAddShape, onUpdat
       const origin = toCanvas(event)
       drawRef.current = {
         origin,
-        shapeId: crypto.randomUUID(),
         draft: { ...DEFAULT_DRAFT, type: tool },
         current: null,
       }
@@ -174,7 +169,7 @@ export function Canvas({ shapes, selectedId, tool, onSelect, onAddShape, onUpdat
             shape={shape}
             selected={shape.id === selectedId}
             interactive={shapesInteractive}
-            onMouseDown={handleShapeMouseDown}
+            onMouseDown={(event) => handleShapeMouseDown(shape, event)}
           />
         ))}
         {draftShape && <Shape shape={draftShape} selected={false} />}

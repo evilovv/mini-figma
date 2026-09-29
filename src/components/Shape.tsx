@@ -1,11 +1,11 @@
 import type { MouseEvent as ReactMouseEvent } from 'react'
-import type { Shape as ShapeModel } from '../types/shape'
+import type { ShapeDraft } from '../types/shape'
 
 interface ShapeProps {
-  shape: ShapeModel
+  shape: ShapeDraft
   selected: boolean
   interactive?: boolean
-  onMouseDown?: (shape: ShapeModel, event: ReactMouseEvent) => void
+  onMouseDown?: (event: ReactMouseEvent) => void
 }
 
 export function Shape({ shape, selected, interactive = false, onMouseDown }: ShapeProps) {
@@ -13,7 +13,7 @@ export function Shape({ shape, selected, interactive = false, onMouseDown }: Sha
 
   return (
     <div
-      onMouseDown={onMouseDown ? (event) => onMouseDown(shape, event) : undefined}
+      onMouseDown={onMouseDown}
       className={[
         'absolute border',
         rounding,
