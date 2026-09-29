@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { DEFAULT_TOOL } from '../constants/tools'
 import type { Shape, ShapeDraft, Tool } from '../types/shape'
+import { createShapeId } from '../utils/id'
 import { loadShapes, saveShapes } from '../utils/storage'
 
 export function useShapes() {
@@ -17,7 +18,7 @@ export function useShapes() {
   }, [])
 
   const addShape = useCallback((draft: ShapeDraft): Shape => {
-    const shape: Shape = { ...draft, id: crypto.randomUUID() }
+    const shape: Shape = { ...draft, id: createShapeId() }
     setShapes((prev) => [...prev, shape])
     setSelectedId(shape.id)
     return shape
