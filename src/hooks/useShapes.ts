@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { DEFAULT_TOOL } from '../constants/tools'
 import type { Shape, ShapeDraft, Tool } from '../types/shape'
 import { createShapeId } from '../utils/id'
-import { loadShapes, saveShapes } from '../utils/storage'
+import { STORAGE_KEY, loadShapes, saveShapes } from '../utils/storage'
 
 export function useShapes() {
   const [initial] = useState(loadShapes)
@@ -18,6 +18,16 @@ export function useShapes() {
     }
     saveShapes(shapes)
   }, [shapes])
+
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== STORAGE_KEY) return
+      skipSaveRef.current = true
+      setShapes(loadShapes())
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
 
   const selectTool = useCallback((next: Tool) => {
     setTool(next)

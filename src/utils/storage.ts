@@ -5,6 +5,8 @@ import type { Shape, ShapeType } from '../types/shape'
 const STORAGE_KEY = 'mini-figma:shapes'
 const BACKUP_KEY = 'mini-figma:shapes:backup'
 
+export { STORAGE_KEY }
+
 const SHAPE_TYPES: readonly ShapeType[] = ['rectangle', 'ellipse']
 const COLOR_PATTERN = /^#[0-9a-fA-F]{3,8}$/
 
