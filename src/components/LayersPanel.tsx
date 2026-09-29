@@ -32,7 +32,7 @@ export function LayersPanel({ shapes, selectedId, onSelect, onDelete }: LayersPa
                   type="button"
                   aria-pressed={active}
                   onClick={() => onSelect(shape.id)}
-                  className={`flex min-w-0 flex-1 items-center rounded-lg px-2 py-1.5 text-left ${
+                  className={`flex min-w-0 flex-1 items-center rounded-lg px-2 py-1.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
                     active ? '' : 'hover:bg-neutral-100'
                   }`}
                 >
@@ -44,7 +44,7 @@ export function LayersPanel({ shapes, selectedId, onSelect, onDelete }: LayersPa
                   type="button"
                   aria-label={`Delete ${shape.type} layer`}
                   onClick={() => onDelete(shape.id)}
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-neutral-400 hover:bg-red-100 hover:text-red-600"
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-neutral-400 hover:bg-red-100 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
                 >
                   ×
                 </button>

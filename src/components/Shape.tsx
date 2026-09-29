@@ -1,5 +1,6 @@
 import type { FocusEvent, KeyboardEvent, PointerEvent } from 'react'
 import type { ShapeDraft } from '../types/shape'
+import { shapeLabel } from '../utils/label'
 
 interface ShapeProps {
   shape: ShapeDraft
@@ -21,13 +22,12 @@ export function Shape({
   onKeyDown,
 }: ShapeProps) {
   const rounding = shape.type === 'ellipse' ? 'rounded-full' : 'rounded-[2px]'
-  const size = `${Math.round(shape.width)}×${Math.round(shape.height)}`
 
   return (
     <div
       role={interactive ? 'button' : undefined}
       aria-hidden={interactive ? undefined : true}
-      aria-label={`Layer ${position ?? '?'}: ${shape.type} ${size}`}
+      aria-label={shapeLabel(shape, position)}
       aria-pressed={interactive ? selected : undefined}
       tabIndex={interactive ? 0 : undefined}
       onPointerDown={onPointerDown}

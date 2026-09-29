@@ -300,6 +300,8 @@ export function Canvas({
   return (
     <div
       ref={containerRef}
+      role="group"
+      aria-label="Drawing canvas"
       className={`absolute inset-0 select-none overflow-hidden bg-neutral-50 ${cursor}`}
       onPointerDown={handlePointerDown}
       style={{

@@ -4,6 +4,7 @@ import { PropertiesPanel } from './components/PropertiesPanel'
 import { LayersPanel } from './components/LayersPanel'
 import { useShapes } from './hooks/useShapes'
 import { useHotkeys } from './hooks/useHotkeys'
+import { shapeLabel } from './utils/label'
 
 export default function App() {
   const {
@@ -26,8 +27,15 @@ export default function App() {
     },
   })
 
+  const announcement = selectedShape
+    ? `${shapeLabel(selectedShape, shapes.findIndex((s) => s.id === selectedShape.id) + 1)} selected`
+    : `${shapes.length} layers, nothing selected`
+
   return (
     <div className="relative h-dvh w-screen overflow-hidden bg-neutral-100 font-sans text-neutral-900 antialiased">
+      <p aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
       <Canvas
         shapes={shapes}
         selectedId={selectedId}

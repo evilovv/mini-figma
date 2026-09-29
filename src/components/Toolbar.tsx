@@ -20,7 +20,7 @@ export function Toolbar({ tool, onSelectTool }: ToolbarProps) {
               aria-label={item.label}
               aria-pressed={active}
               onClick={() => onSelectTool(item.id)}
-              className={`flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold uppercase transition-colors ${
+              className={`flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
                 active
                   ? 'bg-blue-500 text-white'
                   : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
