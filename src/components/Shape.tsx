@@ -4,21 +4,24 @@ import type { Shape as ShapeModel } from '../types/shape'
 interface ShapeProps {
   shape: ShapeModel
   selected: boolean
-  onSelect: () => void
-  onMoveStart: (shape: ShapeModel, event: ReactMouseEvent) => void
+  interactive?: boolean
+  onMouseDown?: (shape: ShapeModel, event: ReactMouseEvent) => void
 }
 
-export function Shape({ shape, selected, onSelect, onMoveStart }: ShapeProps) {
+export function Shape({ shape, selected, interactive = false, onMouseDown }: ShapeProps) {
   const rounding = shape.type === 'ellipse' ? 'rounded-full' : 'rounded-[2px]'
 
   return (
     <div
-      onMouseDown={(event) => {
-        event.stopPropagation()
-        onSelect()
-        onMoveStart(shape, event)
-      }}
-      className={`absolute cursor-move border ${rounding} ${selected ? 'outline outline-2 outline-blue-500' : ''}`}
+      onMouseDown={onMouseDown ? (event) => onMouseDown(shape, event) : undefined}
+      className={[
+        'absolute border',
+        rounding,
+        interactive ? 'cursor-move' : '',
+        selected ? 'outline outline-2 outline-blue-500' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       style={{
         left: shape.x,
         top: shape.y,

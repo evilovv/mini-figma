@@ -129,8 +129,11 @@ export function Canvas({ shapes, selectedId, tool, onSelect, onAddShape, onUpdat
     onSelect(null)
   }
 
-  const handleMoveStart = useCallback(
+  const shapesInteractive = tool === 'select' && !spaceHeld
+
+  const handleShapeMouseDown = useCallback(
     (shape: ShapeModel, event: ReactMouseEvent) => {
+      if (tool !== 'select' || spaceHeld) return
       event.stopPropagation()
       onSelect(shape.id)
       moveRef.current = {
@@ -139,7 +142,7 @@ export function Canvas({ shapes, selectedId, tool, onSelect, onAddShape, onUpdat
         start: { x: shape.x, y: shape.y },
       }
     },
-    [onSelect],
+    [onSelect, tool, spaceHeld],
   )
 
   const grid = 20 * zoom
@@ -170,18 +173,11 @@ export function Canvas({ shapes, selectedId, tool, onSelect, onAddShape, onUpdat
             key={shape.id}
             shape={shape}
             selected={shape.id === selectedId}
-            onSelect={() => onSelect(shape.id)}
-            onMoveStart={handleMoveStart}
+            interactive={shapesInteractive}
+            onMouseDown={handleShapeMouseDown}
           />
         ))}
-        {draftShape && (
-          <Shape
-            shape={draftShape}
-            selected={false}
-            onSelect={() => undefined}
-            onMoveStart={() => undefined}
-          />
-        )}
+        {draftShape && <Shape shape={draftShape} selected={false} />}
       </div>
     </div>
   )
