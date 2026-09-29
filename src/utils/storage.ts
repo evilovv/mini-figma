@@ -4,8 +4,9 @@ import type { Shape, ShapeType } from '../types/shape'
 
 const STORAGE_KEY = 'mini-figma:shapes'
 const BACKUP_KEY = 'mini-figma:shapes:backup'
+const SCHEMA_VERSION = 1
 
-export { STORAGE_KEY }
+export { STORAGE_KEY, SCHEMA_VERSION }
 
 const SHAPE_TYPES: readonly ShapeType[] = ['rectangle', 'ellipse']
 const COLOR_PATTERN = /^#[0-9a-fA-F]{3,8}$/
@@ -13,6 +14,11 @@ const COLOR_PATTERN = /^#[0-9a-fA-F]{3,8}$/
 interface Repair<T> {
   value: T
   lossy: boolean
+}
+
+interface ShapeDocument {
+  version: number
+  shapes: Shape[]
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -70,6 +76,49 @@ function keepOriginal(raw: string): void {
   }
 }
 
+function readEnvelope(value: Record<string, unknown>): unknown[] | null {
+  const version = value.version
+  if (typeof version !== 'number' || !Number.isInteger(version) || version < 0) return null
+  if (version > SCHEMA_VERSION) return null
+  const shapes = value.shapes
+  return Array.isArray(shapes) ? shapes : null
+}
+
+function readItems(raw: string): unknown[] | null {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return null
+  }
+  if (Array.isArray(parsed)) return parsed
+  if (!isPlainObject(parsed)) return null
+  return readEnvelope(parsed)
+}
+
+function repairAll(items: readonly unknown[], raw: string): Shape[] {
+  const shapes: Shape[] = []
+  let lossy = false
+  for (const item of items) {
+    const result = repairShape(item)
+    if (result.lossy) lossy = true
+    if (result.value !== null) shapes.push(result.value)
+  }
+  if (lossy) keepOriginal(raw)
+  return shapes
+}
+
+export function serializeDocument(shapes: readonly Shape[]): string {
+  const document: ShapeDocument = { version: SCHEMA_VERSION, shapes: [...shapes] }
+  return JSON.stringify(document)
+}
+
+export function parseDocument(raw: string): Shape[] | null {
+  const items = readItems(raw)
+  if (items === null) return null
+  return repairAll(items, raw)
+}
+
 export function loadShapes(): Shape[] {
   let raw: string | null
   try {
@@ -78,34 +127,17 @@ export function loadShapes(): Shape[] {
     return []
   }
   if (!raw) return []
-
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw)
-  } catch {
+  const shapes = parseDocument(raw)
+  if (shapes === null) {
     keepOriginal(raw)
     return []
   }
-  if (!Array.isArray(parsed)) {
-    keepOriginal(raw)
-    return []
-  }
-
-  const shapes: Shape[] = []
-  let lossy = false
-  for (const item of parsed) {
-    const result = repairShape(item)
-    if (result.lossy) lossy = true
-    if (result.value !== null) shapes.push(result.value)
-  }
-  if (lossy) keepOriginal(raw)
-
   return shapes
 }
 
 export function saveShapes(shapes: readonly Shape[]): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(shapes))
+    localStorage.setItem(STORAGE_KEY, serializeDocument(shapes))
   } catch {
     return
   }
