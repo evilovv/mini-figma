@@ -11,14 +11,14 @@ export function LayersPanel({ shapes, selectedId, onSelect, onDelete }: LayersPa
   const layers = shapes.map((shape, index) => ({ shape, position: index + 1 })).reverse()
 
   return (
-    <aside className="absolute bottom-4 right-4 z-10 w-60 rounded-2xl border border-neutral-200 bg-white p-4 shadow-lg">
-      <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-neutral-400">
+    <aside className="absolute bottom-4 right-4 z-10 flex max-h-[calc(100vh-2rem)] w-60 flex-col rounded-2xl border border-neutral-200 bg-white p-4 shadow-lg">
+      <h2 className="mb-3 shrink-0 text-[11px] font-semibold uppercase tracking-widest text-neutral-400">
         Layers
       </h2>
       {shapes.length === 0 ? (
         <p className="text-sm text-neutral-400">No layers yet</p>
       ) : (
-        <ul className="space-y-1">
+        <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain">
           {layers.map(({ shape, position }) => {
             const active = shape.id === selectedId
             return (
