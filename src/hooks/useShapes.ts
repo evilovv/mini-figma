@@ -1,15 +1,21 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { DEFAULT_TOOL } from '../constants/tools'
 import type { Shape, ShapeDraft, Tool } from '../types/shape'
 import { createShapeId } from '../utils/id'
 import { loadShapes, saveShapes } from '../utils/storage'
 
 export function useShapes() {
-  const [shapes, setShapes] = useState<Shape[]>(loadShapes)
+  const [initial] = useState(loadShapes)
+  const [shapes, setShapes] = useState<Shape[]>(initial)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [tool, setTool] = useState<Tool>(DEFAULT_TOOL)
+  const skipSaveRef = useRef(true)
 
   useEffect(() => {
+    if (skipSaveRef.current) {
+      skipSaveRef.current = false
+      return
+    }
     saveShapes(shapes)
   }, [shapes])
 

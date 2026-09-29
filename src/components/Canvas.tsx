@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import type { Point, Shape as ShapeModel, ShapeDraft, Tool } from '../types/shape'
+import { DEFAULT_FILL, DEFAULT_STROKE, DEFAULT_STROKE_WIDTH } from '../constants/shape'
 import { useViewport } from '../hooks/useViewport'
 import { Shape } from './Shape'
 import { screenToCanvas } from '../utils/geometry'
@@ -18,9 +19,9 @@ const DEFAULT_DRAFT: Omit<ShapeDraft, 'type'> = {
   y: 0,
   width: 0,
   height: 0,
-  fill: '#3b82f6',
-  stroke: '#1e40af',
-  strokeWidth: 2,
+  fill: DEFAULT_FILL,
+  stroke: DEFAULT_STROKE,
+  strokeWidth: DEFAULT_STROKE_WIDTH,
 }
 
 interface DrawState {
