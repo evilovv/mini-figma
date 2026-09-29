@@ -1,32 +1,81 @@
-# React + TypeScript + Vite
+# mini-figma
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Мини-редактор векторных фигур в браузере: рисуем прямоугольники и эллипсы, двигаем их,
+меняем размер, заливку и обводку, листаем слои. Работает полностью на клиенте, без сервера
+и без внешних сервисов, состояние хранится в `localStorage`.
 
-Currently, two official plugins are available:
+## Стек
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React 19 + TypeScript (строгий режим)
+- Vite 8
+- Tailwind CSS 4
+- oxlint — линтер
+- GitHub Pages — деплой из ветки `main`
 
-## React Compiler
+## Запуск
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install     # один раз
+npm run dev     # http://localhost:5173
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Либо двойным кликом по `start.cmd` — скрипт сам поставит зависимости и запустит дев-сервер.
+
+## Скрипты
+
+| Команда             | Что делает                              |
+| ------------------- | --------------------------------------- |
+| `npm run dev`       | Дев-сервер с горячей перезагрузкой      |
+| `npm run build`     | Проверка типов + продакшн-сборка в `dist` |
+| `npm run preview`   | Локальный просмотр собранной версии     |
+| `npm run lint`      | oxlint                                  |
+| `npm run typecheck` | `tsc -b`, только типы                   |
+| `npm run check`     | Линтер + типы, то, что гоняет CI        |
+
+## Управление
+
+| Действие                        | Как                              |
+| ------------------------------- | -------------------------------- |
+| Инструмент «выделение»          | `V`, или кнопка `V` на панели    |
+| Прямоугольник                   | `R`                              |
+| Эллипс                          | `O`                              |
+| Нарисовать фигуру                | Зажать инструмент и растянуть мышью |
+| Переместить фигуру               | Перетащить её инструментом выделения |
+| Удалить фигуру                  | `Delete` / `Backspace` или `×` в панели слоёв |
+| Панорамирование холста          | Зажать `Space` и тянуть мышью     |
+| Масштаб                         | Колесо мыши (зум к курсору)      |
+
+Панель свойств меняет `X`, `Y`, размер, заливку, обводку и толщину обводки выбранной фигуры.
+Панель слоёв показывает фигуры сверху вниз (последняя созданная — наверху).
+
+## Структура
+
+```
+src/
+  components/   Toolbar, Canvas, Shape, PropertiesPanel, LayersPanel
+  hooks/        useShapes (состояние), useViewport (панорама и зум), useHotkeys
+  utils/        geometry (координаты и зум), storage (localStorage)
+  types/        модель фигуры и инструментов
+  constants/    описание инструментов и их горячих клавиш
+```
+
+## Данные
+
+Фигуры сохраняются в `localStorage` под ключом `mini-figma:shapes` при каждом изменении.
+При старте данные читаются и проверяются: битые или подделанные значения отбрасываются,
+приложение открывается с пустым холстом. Приватный режим браузера и переполнение квоты
+не ломают работу — фигуры просто не переживут перезагрузку.
+
+## Проверки перед коммитом
+
+```bash
+npm run check   # обязательно
+npm run build   # обязательно, если менялась вёрстка или зависимости
+```
+
+## Деплой
+
+Пуш в `main` запускает `.github/workflows/deploy.yml`: установка зависимостей, `npm run check`,
+сборка и публикация в GitHub Pages. Путь сборки задан в `vite.config.ts` (`base: '/mini-figma/'`)
+и соответствует адресу проекта на GitHub Pages — при переносе в другой репозиторий значение
+нужно поменять.
