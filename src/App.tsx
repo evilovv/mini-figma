@@ -6,9 +6,10 @@ import { LayersPanel } from './components/LayersPanel'
 import { OptionsPanel } from './components/OptionsPanel'
 import { useShapes } from './hooks/useShapes'
 import { useHotkeys } from './hooks/useHotkeys'
-import { downloadText, readTextFile } from './utils/file'
+import { downloadBlob, downloadText, readTextFile } from './utils/file'
 import { withUniqueIds } from './utils/id'
 import { shapeLabel } from './utils/label'
+import { getBounds, renderPngBlob, renderSvg } from './utils/render'
 import { parseDocument, serializeDocument } from './utils/storage'
 
 const STATUS_TTL_MS = 4000
@@ -66,6 +67,35 @@ export default function App() {
     [replaceShapes],
   )
 
+  const handleExportSvg = useCallback(() => {
+    const bounds = getBounds(shapes)
+    if (!bounds) {
+      setStatus('Nothing to export')
+      return
+    }
+    downloadText(renderSvg(shapes, bounds), 'mini-figma.svg', 'image/svg+xml')
+    setStatus('Exported SVG')
+  }, [shapes])
+
+  const handleExportPng = useCallback(() => {
+    const bounds = getBounds(shapes)
+    if (!bounds) {
+      setStatus('Nothing to export')
+      return
+    }
+    setStatus('Rendering PNG...')
+    renderPngBlob(shapes, bounds)
+      .then((blob) => {
+        if (!blob) {
+          setStatus('Could not render PNG')
+          return
+        }
+        downloadBlob(blob, 'mini-figma.png')
+        setStatus('Exported PNG')
+      })
+      .catch(() => setStatus('Could not render PNG'))
+  }, [shapes])
+
   const announcement = selectedShape
     ? `${shapeLabel(selectedShape, shapes.findIndex((s) => s.id === selectedShape.id) + 1)} selected`
     : `${shapes.length} layers, nothing selected`
@@ -91,6 +121,8 @@ export default function App() {
         onToggleSnap={setSnap}
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
+        onExportSvg={handleExportSvg}
+        onExportPng={handleExportPng}
       />
       <Toolbar tool={tool} onSelectTool={selectTool} />
       <PropertiesPanel shape={selectedShape} onUpdate={updateShape} />

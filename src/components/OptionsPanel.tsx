@@ -4,6 +4,8 @@ interface OptionsPanelProps {
   onToggleSnap: (value: boolean) => void
   onExportJson: () => void
   onImportJson: (file: File) => void
+  onExportSvg: () => void
+  onExportPng: () => void
 }
 
 const buttonClass =
@@ -15,6 +17,8 @@ export function OptionsPanel({
   onToggleSnap,
   onExportJson,
   onImportJson,
+  onExportSvg,
+  onExportPng,
 }: OptionsPanelProps) {
   return (
     <aside className="absolute left-4 top-4 z-10 flex w-56 flex-col gap-2 rounded-2xl border border-neutral-200 bg-white px-3 py-2 shadow-lg">
@@ -51,6 +55,15 @@ export function OptionsPanel({
             }}
           />
         </label>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button type="button" className={buttonClass} onClick={onExportSvg}>
+          Export SVG
+        </button>
+        <button type="button" className={buttonClass} onClick={onExportPng}>
+          Export PNG
+        </button>
       </div>
 
       <p className="m-0 text-xs text-neutral-500" role="status">
