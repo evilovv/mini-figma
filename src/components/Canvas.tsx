@@ -10,6 +10,7 @@ interface CanvasProps {
   selectedId: string | null
   tool: Tool
   snap: boolean
+  dark: boolean
   onSelect: (id: string | null) => void
   onAddShape: (draft: ShapeDraft) => void
   onUpdateShape: (id: string, patch: Partial<Omit<ShapeModel, 'id'>>) => void
@@ -68,6 +69,7 @@ export function Canvas({
   selectedId,
   tool,
   snap,
+  dark,
   onSelect,
   onAddShape,
   onUpdateShape,
@@ -297,6 +299,7 @@ export function Canvas({
   )
 
   const grid = GRID_SIZE * zoom
+  const gridColor = dark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(0, 0, 0, 0.07)'
   const cursor = isPinching
     ? 'cursor-grabbing'
     : isPanning
@@ -312,13 +315,13 @@ export function Canvas({
       ref={containerRef}
       role="group"
       aria-label="Drawing canvas"
-      className={`absolute inset-0 select-none overflow-hidden bg-neutral-50 ${cursor}`}
+      className={`absolute inset-0 select-none overflow-hidden bg-neutral-50 dark:bg-neutral-900 ${cursor}`}
       onPointerDown={handlePointerDown}
       style={{
         touchAction: 'none',
         backgroundImage:
-          'linear-gradient(to right, rgba(0, 0, 0, 0.07) 1px, transparent 1px), ' +
-          'linear-gradient(to bottom, rgba(0, 0, 0, 0.07) 1px, transparent 1px)',
+          `linear-gradient(to right, ${gridColor} 1px, transparent 1px), ` +
+          `linear-gradient(to bottom, ${gridColor} 1px, transparent 1px)`,
         backgroundSize: `${grid}px ${grid}px`,
         backgroundPosition: `${pan.x}px ${pan.y}px`,
       }}

@@ -6,6 +6,7 @@ import { LayersPanel } from './components/LayersPanel'
 import { OptionsPanel } from './components/OptionsPanel'
 import { useShapes } from './hooks/useShapes'
 import { useHotkeys } from './hooks/useHotkeys'
+import { useTheme } from './hooks/useTheme'
 import { downloadBlob, downloadText, readTextFile } from './utils/file'
 import { withUniqueIds } from './utils/id'
 import { shapeLabel } from './utils/label'
@@ -31,6 +32,7 @@ export default function App() {
 
   const [snap, setSnap] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
+  const { theme, toggleTheme } = useTheme()
 
   useHotkeys({
     onSelectTool: selectTool,
@@ -101,7 +103,7 @@ export default function App() {
     : `${shapes.length} layers, nothing selected`
 
   return (
-    <div className="relative h-dvh w-screen overflow-hidden bg-neutral-100 font-sans text-neutral-900 antialiased">
+      <div className="relative h-dvh w-screen overflow-hidden bg-neutral-100 font-sans text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
       <p aria-live="polite" className="sr-only">
         {announcement}
       </p>
@@ -110,6 +112,7 @@ export default function App() {
         selectedId={selectedId}
         tool={tool}
         snap={snap}
+        dark={theme === 'dark'}
         onSelect={select}
         onAddShape={addShape}
         onUpdateShape={updateShape}
@@ -118,11 +121,13 @@ export default function App() {
       <OptionsPanel
         snap={snap}
         status={status}
+        dark={theme === 'dark'}
         onToggleSnap={setSnap}
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
         onExportSvg={handleExportSvg}
         onExportPng={handleExportPng}
+        onToggleTheme={toggleTheme}
       />
       <Toolbar tool={tool} onSelectTool={selectTool} />
       <PropertiesPanel shape={selectedShape} onUpdate={updateShape} />

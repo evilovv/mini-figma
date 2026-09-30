@@ -8,7 +8,7 @@ interface ToolbarProps {
 
 export function Toolbar({ tool, onSelectTool }: ToolbarProps) {
   return (
-    <aside className="absolute left-4 top-1/2 z-10 -translate-y-1/2 rounded-2xl border border-neutral-200 bg-white p-1.5 shadow-lg">
+    <aside className="absolute left-4 top-1/2 z-10 -translate-y-1/2 rounded-2xl border border-neutral-200 bg-white p-1.5 shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
       <div className="flex flex-col items-center gap-1">
         {TOOLS.map((item) => {
           const active = tool === item.id
@@ -23,7 +23,7 @@ export function Toolbar({ tool, onSelectTool }: ToolbarProps) {
               className={`flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
                 active
                   ? 'bg-blue-500 text-white'
-                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white'
               }`}
             >
               {item.shortcut}

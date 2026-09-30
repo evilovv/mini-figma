@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 html,
 body,
 #root {
@@ -8,4 +10,9 @@ body,
 
 body {
   overscroll-behavior: none;
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
 }

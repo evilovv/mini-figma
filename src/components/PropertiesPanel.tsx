@@ -7,7 +7,7 @@ interface PropertiesPanelProps {
 }
 
 const FIELD_CLASS =
-  'h-8 w-full rounded-lg border border-neutral-200 px-2 text-xs text-neutral-900 outline-none focus:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-500'
+  'h-8 w-full rounded-lg border border-neutral-200 bg-white px-2 text-xs text-neutral-900 outline-none focus:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100'
 
 const MAX_COORDINATE = 100000
 const MAX_STROKE_WIDTH = 200
@@ -48,7 +48,7 @@ function NumberField({
   const [text, setText] = useState<string | null>(null)
 
   return (
-    <label className="flex flex-col gap-1 text-[11px] font-medium text-neutral-500">
+    <label className="flex flex-col gap-1 text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
       <span className="uppercase tracking-widest">{label}</span>
       <input
         type="number"
@@ -86,13 +86,13 @@ function ColorField({
   onChange: (value: string) => void
 }) {
   return (
-    <label className="flex items-center justify-between gap-2 text-[11px] font-medium text-neutral-500">
+    <label className="flex items-center justify-between gap-2 text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
       <span className="uppercase tracking-widest">{label}</span>
       <input
         type="color"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-8 w-12 cursor-pointer rounded-lg border border-neutral-200 bg-white p-1"
+        className="h-8 w-12 cursor-pointer rounded-lg border border-neutral-200 bg-white p-1 dark:border-neutral-700"
       />
     </label>
   )
@@ -100,16 +100,16 @@ function ColorField({
 
 export function PropertiesPanel({ shape, onUpdate }: PropertiesPanelProps) {
   return (
-    <aside className="absolute inset-x-2 top-2 z-10 max-h-[38dvh] w-auto overflow-y-auto overscroll-contain rounded-2xl border border-neutral-200 bg-white p-4 shadow-lg sm:inset-x-auto sm:right-4 sm:max-h-[calc(100dvh-2rem)] sm:w-60 sm:overflow-visible">
-      <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-neutral-400">
+    <aside className="absolute inset-x-2 top-2 z-10 max-h-[38dvh] w-auto overflow-y-auto overscroll-contain rounded-2xl border border-neutral-200 bg-white p-4 shadow-lg dark:border-neutral-800 dark:bg-neutral-900 sm:inset-x-auto sm:right-4 sm:max-h-[calc(100dvh-2rem)] sm:w-60 sm:overflow-visible">
+      <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
         Properties
       </h2>
 
       {shape === null ? (
-        <p className="text-sm text-neutral-400">Nothing selected yet</p>
+        <p className="text-sm text-neutral-400 dark:text-neutral-500">Nothing selected yet</p>
       ) : (
         <>
-          <div className="mb-3 text-xs font-semibold uppercase tracking-widest text-blue-600">
+          <div className="mb-3 text-xs font-semibold uppercase tracking-widest text-blue-600 dark:text-blue-400">
             {shape.type}
           </div>
 
